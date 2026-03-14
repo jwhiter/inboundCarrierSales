@@ -1,0 +1,32 @@
+[
+  {
+    "load_id": "LD-001",
+    "origin": "Chicago, IL",
+    "destination": "Atlanta, GA",
+    "pickup_datetime": "2026-03-16T09:00:00",
+    "delivery_datetime": "2026-03-17T15:00:00",
+    "equipment_type": "Dry Van",
+    "loadboard_rate": 2200,
+    "notes": "No hazmat. Dock pickup.",
+    "weight": 32000,
+    "commodity_type": "Retail Goods",
+    "num_of_pieces": 24,
+    "miles": 715,
+    "dimensions": "24 pallets"
+  },
+  {
+    "load_id": "LD-002",
+    "origin": "Dallas, TX",
+    "destination": "Houston, TX",
+    "pickup_datetime": "2026-03-16T08:00:00",
+    "delivery_datetime": "2026-03-16T16:00:00",
+    "equipment_type": "Reefer",
+    "loadboard_rate": 1100,
+    "notes": "Temp controlled produce.",
+    "weight": 18000,
+    "commodity_type": "Produce",
+    "num_of_pieces": 12,
+    "miles": 240,
+    "dimensions": "12 pallets"
+  }
+]
