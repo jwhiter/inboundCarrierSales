@@ -1,9 +1,28 @@
-import streamlit as st
-import requests
-import pandas as pd
+import os
 from datetime import datetime
 
-API_URL = "http://127.0.0.1:8000/metrics"
+import pandas as pd
+import requests
+import streamlit as st
+
+def load_env(path: str = ".env") -> None:
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as env_file:
+        for raw_line in env_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+load_env()
+
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/metrics")
+API_KEY = os.getenv("API_KEY")
 
 st.set_page_config(
     page_title="Inbound Carrier Sales Dashboard",
@@ -57,7 +76,13 @@ with header_right:
     refresh = st.button("Refresh")
 
 try:
-    response = requests.get(API_URL, timeout=5)
+    headers = {}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    else:
+        st.warning("API_KEY is not set. Set it to access the secured API.")
+
+    response = requests.get(API_URL, headers=headers, timeout=5)
     response.raise_for_status()
     metrics = response.json()
 

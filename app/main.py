@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, Header, HTTPException, Depends
 from pydantic import BaseModel, Field
 import json
 from pathlib import Path
@@ -6,8 +7,36 @@ from app.db.database import engine, SessionLocal
 from app.db.models import Base, CallRecord
 from sqlalchemy import func
 
+def load_env(path: str = ".env") -> None:
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as env_file:
+        for raw_line in env_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+load_env()
+
 Base.metadata.create_all(bind=engine)
-app = FastAPI(title="Inbound Carrier Sales API")
+
+API_KEY = os.getenv("API_KEY")
+
+def require_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")):
+    if not API_KEY:
+        raise HTTPException(status_code=500, detail="API_KEY is not configured")
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+app = FastAPI(
+    title="Inbound Carrier Sales API",
+    dependencies=[Depends(require_api_key)]
+)
 
 class CarrierRequest(BaseModel):
     mc_number: str = Field(example="123456")
