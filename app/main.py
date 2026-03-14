@@ -31,16 +31,24 @@ class FinalizeCallRequest(BaseModel):
     load_id: str | None = Field(default=None, example="LD-001")
     origin: str | None = Field(default=None, example="Chicago, IL")
     destination: str | None = Field(default=None, example="Atlanta, GA")
+    pickup_datetime: str | None = Field(default=None, example="2026-03-16T09:00:00")
+    delivery_datetime: str | None = Field(default=None, example="2026-03-17T15:00:00")
     equipment_type: str | None = Field(default=None, example="Dry Van")
 
     loadboard_rate: float | None = Field(default=None, example=2200)
     counteroffer: float | None = Field(default=None, example=2300)
     final_rate: float = Field(example=2250)
 
+    notes: str | None = Field(default=None, example="No hazmat. Dock pickup.")
+    weight: float | None = Field(default=None, example=32000)
+    commodity_type: str | None = Field(default=None, example="Retail Goods")
+    num_of_pieces: int | None = Field(default=None, example=24)
+    miles: float | None = Field(default=None, example=715)
+    dimensions: str | None = Field(default=None, example="24 pallets")
+
     negotiation_rounds: int = Field(example=2)
     outcome: str = Field(example="booked")
     sentiment: str = Field(example="positive")
-
 
 def load_data():
     data_path = Path(__file__).parent / "data" / "loads.json"
