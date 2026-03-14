@@ -1,23 +1,35 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import json
 from pathlib import Path
+from app.db.database import engine, SessionLocal
+from app.db.models import Base, CallRecord
+from sqlalchemy import func
 
+Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Inbound Carrier Sales API")
 
 class CarrierRequest(BaseModel):
-    mc_number: str
+    mc_number: str = Field(example="123456")
 
 class LoadSearchRequest(BaseModel):
-    origin: str
-    destination: str
-    equipment_type: str
+    origin: str = Field(example="Chicago, IL")
+    destination: str = Field(example="Atlanta, GA")
+    equipment_type: str = Field(example="Dry Van")
 
 class OfferRequest(BaseModel):
-    load_id: str
-    loadboard_rate: float
-    counteroffer: float
-    round: int
+    load_id: str = Field(example="LD-001")
+    loadboard_rate: float = Field(example=2200)
+    counteroffer: float = Field(example=2300)
+    round: int = Field(example=1)
+
+class FinalizeCallRequest(BaseModel):
+    mc_number: str = Field(example="123456")
+    load_id: str = Field(example="LD-001")
+    final_rate: float = Field(example=2250)
+    negotiation_rounds: int = Field(example=2)
+    outcome: str = Field(example="booked")
+    sentiment: str = Field(example="positive")
 
 def load_data():
     data_path = Path(__file__).parent / "data" / "loads.json"
@@ -29,6 +41,7 @@ def load_data():
 def root():
     return {"message": "Inbound Carrier Sales API is running"}
 
+# ----- verify carrier eligibility -------
 @app.post("/verify-carrier")
 def verify_carrier(request: CarrierRequest):
     if request.mc_number == "123456":
@@ -45,7 +58,15 @@ def verify_carrier(request: CarrierRequest):
             "status": "inactive",
             "reason": "Carrier is not eligible to haul"
         }
+    else:
+        return {
+            "eligible": False,
+            "carrier_name": None,
+            "status": "unknown",
+            "reason": "Carrier not found; requires manual review"
+        }
 
+# ----- search loads in loads.json -------
 @app.post("/search-loads")
 def search_loads(request: LoadSearchRequest):
     loads = load_data()
@@ -58,8 +79,9 @@ def search_loads(request: LoadSearchRequest):
     ]
     return {"matches": matches[:3]}
 
+# ----- negotiation logic for offer evaluation -------
 @app.post("/evaluate-offer")
-def evaluateoffer(request: OfferRequest):
+def evaluate_offer(request: OfferRequest):
     ask = request.loadboard_rate
     rounds_remaining = max(0, 3-request.round)
 
@@ -79,8 +101,73 @@ def evaluateoffer(request: OfferRequest):
         }
 
     return {
-        "decision": "reject",
-        "counter_rate": None,
-        "message": "That rate is too high for this load.",
-        "rounds_remaining": rounds_remaining
+        "decision": "accept",
+        "counter_rate": request.counteroffer,
+        "message": f"Accepted at {request.counteroffer}",
+        "rounds_remaining": rounds_remaining,
     }
+
+# ---- save final call result ------
+@app.post("/finalize-call")
+def finalize_call(request: FinalizeCallRequest):
+    db = SessionLocal()
+    try:
+        call = CallRecord(
+            mc_number=request.mc_number,
+            load_id=request.load_id,
+            final_rate=request.final_rate,
+            negotiation_rounds=request.negotiation_rounds,
+            outcome=request.outcome,
+            sentiment=request.sentiment
+        )
+        
+        db.add(call)
+        db.commit()
+        db.refresh(call)
+
+        return {
+            "message": "Call saved successfully",
+            "call_id": call.id
+        }
+    finally:
+        db.close()
+
+@app.get("/metrics")
+def get_metrics():
+    db = SessionLocal()
+    try:
+        total_calls = db.query(CallRecord).count()
+
+        booked_calls = db.query(CallRecord).filter(
+            CallRecord.outcome == "booked"
+        ).count()
+
+        failed_negotiations = db.query(CallRecord).filter(
+            CallRecord.outcome == "negotiation_failed"
+        ).count()
+
+        ineligible_carriers = db.query(CallRecord).filter(
+            CallRecord.outcome == "ineligible_carrier"
+        ).count()
+
+        avg_final_rate = db.query(func.avg(CallRecord.final_rate)).scalar()
+
+        sentiment_rows = db.query(
+            CallRecord.sentiment,
+            func.count(CallRecord.id)
+        ).group_by(CallRecord.sentiment).all()
+
+        sentiment_breakdown = {
+            sentiment: count for sentiment, count in sentiment_rows
+        }
+
+        return {
+            "total_calls": total_calls,
+            "booked_calls": booked_calls,
+            "failed_negotiations": failed_negotiations,
+            "ineligible_carriers": ineligible_carriers,
+            "avg_final_rate": round(avg_final_rate, 2) if avg_final_rate else 0,
+            "sentiment_breakdown": sentiment_breakdown
+        }
+    finally:
+        db.close()
