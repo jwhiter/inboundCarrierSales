@@ -101,10 +101,10 @@ def evaluate_offer(request: OfferRequest):
         }
 
     return {
-        "decision": "accept",
-        "counter_rate": request.counteroffer,
-        "message": f"Accepted at {request.counteroffer}",
-        "rounds_remaining": rounds_remaining,
+        "decision": "reject",
+        "counter_rate": None,
+        "message": "That rate is too high for this load.",
+        "rounds_remaining": rounds_remaining
     }
 
 # ---- save final call result ------
@@ -150,7 +150,9 @@ def get_metrics():
             CallRecord.outcome == "ineligible_carrier"
         ).count()
 
-        avg_final_rate = db.query(func.avg(CallRecord.final_rate)).scalar()
+        avg_final_rate = db.query(func.avg(CallRecord.final_rate)).filter(
+            CallRecord.final_rate > 0
+        ).scalar()
 
         sentiment_rows = db.query(
             CallRecord.sentiment,
