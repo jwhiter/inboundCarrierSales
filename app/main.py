@@ -25,11 +25,22 @@ class OfferRequest(BaseModel):
 
 class FinalizeCallRequest(BaseModel):
     mc_number: str = Field(example="123456")
-    load_id: str = Field(example="LD-001")
+    carrier_name: str | None = Field(default=None, example="Demo Carrier LLC")
+    carrier_eligible: bool | None = Field(default=None, example=True)
+
+    load_id: str | None = Field(default=None, example="LD-001")
+    origin: str | None = Field(default=None, example="Chicago, IL")
+    destination: str | None = Field(default=None, example="Atlanta, GA")
+    equipment_type: str | None = Field(default=None, example="Dry Van")
+
+    loadboard_rate: float | None = Field(default=None, example=2200)
+    counteroffer: float | None = Field(default=None, example=2300)
     final_rate: float = Field(example=2250)
+
     negotiation_rounds: int = Field(example=2)
     outcome: str = Field(example="booked")
     sentiment: str = Field(example="positive")
+
 
 def load_data():
     data_path = Path(__file__).parent / "data" / "loads.json"
@@ -114,13 +125,20 @@ def finalize_call(request: FinalizeCallRequest):
     try:
         call = CallRecord(
             mc_number=request.mc_number,
+            carrier_name=request.carrier_name,
+            carrier_eligible=request.carrier_eligible,
             load_id=request.load_id,
+            origin=request.origin,
+            destination=request.destination,
+            equipment_type=request.equipment_type,
+            loadboard_rate=request.loadboard_rate,
+            counteroffer=request.counteroffer,
             final_rate=request.final_rate,
             negotiation_rounds=request.negotiation_rounds,
             outcome=request.outcome,
             sentiment=request.sentiment
         )
-        
+
         db.add(call)
         db.commit()
         db.refresh(call)
