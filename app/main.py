@@ -135,13 +135,25 @@ def finalize_call(request: FinalizeCallRequest):
             mc_number=request.mc_number,
             carrier_name=request.carrier_name,
             carrier_eligible=request.carrier_eligible,
+
             load_id=request.load_id,
             origin=request.origin,
             destination=request.destination,
+            pickup_datetime=request.pickup_datetime,
+            delivery_datetime=request.delivery_datetime,
             equipment_type=request.equipment_type,
+
             loadboard_rate=request.loadboard_rate,
             counteroffer=request.counteroffer,
             final_rate=request.final_rate,
+
+            notes=request.notes,
+            weight=request.weight,
+            commodity_type=request.commodity_type,
+            num_of_pieces=request.num_of_pieces,
+            miles=request.miles,
+            dimensions=request.dimensions,
+
             negotiation_rounds=request.negotiation_rounds,
             outcome=request.outcome,
             sentiment=request.sentiment
