@@ -1,0 +1,16 @@
+[project]
+name = "inbound-carrier-sales"
+version = "0.1.0"
+description = "Inbound carrier sales automation backend for HappyRobot challenge"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "sqlalchemy"
+]
+
+[tool.uvicorn]
+reload = true
