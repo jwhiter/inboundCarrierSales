@@ -1,0 +1,50 @@
+name: Build and Deploy to Azure Web App (ACR)
+
+on:
+  push:
+    branches: ["deploy-setup"]
+  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: inbound-carrier-api
+  WEBAPP_NAME: InboundCarrierSales-WA
+  RESOURCE_GROUP: ai_marketplace
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Docker Login (ACR)
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Configure Web App Container
+        run: |
+          az webapp config container set \
+            --resource-group $RESOURCE_GROUP \
+            --name $WEBAPP_NAME \
+            --docker-custom-image-name $ACR_LOGIN_SERVER/$IMAGE_NAME:latest \
+            --docker-registry-server-url https://$ACR_LOGIN_SERVER \
+            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
