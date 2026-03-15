@@ -18,11 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Docker Login (ACR)
         uses: azure/docker-login@v2
         with:
@@ -38,13 +33,3 @@ jobs:
           tags: |
             ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-
-      - name: Configure Web App Container
-        run: |
-          az webapp config container set \
-            --resource-group $RESOURCE_GROUP \
-            --name $WEBAPP_NAME \
-            --docker-custom-image-name $ACR_LOGIN_SERVER/$IMAGE_NAME:latest \
-            --docker-registry-server-url https://$ACR_LOGIN_SERVER \
-            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
-            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
