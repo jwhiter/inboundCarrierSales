@@ -70,13 +70,13 @@ This API requires an API key for all endpoints.
 Set an API key in `.env` (the app loads it automatically):
 
 ```env
-API_KEY=dev-secret
+API_KEY=<your-strong-key>
 ```
 
 Example call:
 
 ```bash
-curl -H "X-API-Key: dev-secret" http://127.0.0.1:8000/metrics
+curl -H "X-API-Key: <your-strong-key>" http://127.0.0.1:8000/metrics
 ```
 
 ### Carrier Verification (FMCSA)
