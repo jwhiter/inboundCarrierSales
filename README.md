@@ -49,6 +49,8 @@ These instructions will get you a copy of the project up and running on your loc
     ```
     This will install FastAPI, Uvicorn, SQLAlchemy, and other required packages.
 
+    For deployment platforms that expect a `requirements.txt`, a minimal one is included.
+
 ## Usage
 
 To run the FastAPI application, use the following command:
@@ -155,30 +157,53 @@ Run it with:
 streamlit run dashboard/app.py --server.address 0.0.0.0 --server.port $PORT
 ```
 
-## Calls
+### Azure App Service (Dashboard)
 
-Do not buy a phone number on the platform. Use the web call trigger feature instead.
+If deploying the dashboard to a separate Azure App Service:
+
+1. Create a Linux Python Web App.
+2. Set Startup Command:
+   ```bash
+   python -m streamlit run dashboard/app.py --server.port 8000 --server.address 0.0.0.0
+   ```
+3. App settings:
+   ```text
+   API_URL=https://inboundcarriersales-wa4c-e5bkf3e9eydaarar.spaincentral-01.azurewebsites.net/metrics
+   API_KEY=<your-strong-key>
+   SCM_DO_BUILD_DURING_DEPLOYMENT=true
+   WEBSITES_PORT=8000
+   ```
+
+## Deployed URLs
+
+API:
+`https://inboundcarriersales-wa4c-e5bkf3e9eydaarar.spaincentral-01.azurewebsites.net`
+
+Dashboard:
+`https://inboundcarriersales-wa-awdkgta3gqbjgpbr.spaincentral-01.azurewebsites.net`
+
 
 ## Project Structure
 
 ```
 inboundCarrierSales/
-│
-├── .gitignore
-├── calls.db            # SQLite database for call records
-├── pyproject.toml      # Project configuration and dependencies
-├── README.md           # This file
-│
-├── app/
-│   ├── main.py         # FastAPI application logic and endpoints
-│   ├── data/
-│   │   └── loads.json  # Sample load data
-│   └── db/
-│       ├── database.py # Database session and engine setup
-│       └── models.py   # SQLAlchemy database models
-│
-└── dashboard/
-    └── app.py          # (Presumably for a future analytics dashboard)
+�
++-- .gitignore
++-- calls.db            # SQLite database for call records
++-- pyproject.toml      # Project configuration and dependencies
++-- requirements.txt    # Minimal deps for deployment platforms
++-- README.md           # This file
+�
++-- app/
+�   +-- main.py         # FastAPI application logic and endpoints
+�   +-- data/
+�   �   +-- loads.json  # Sample load data
+�   +-- db/
+�       +-- database.py # Database session and engine setup
+�       +-- models.py   # SQLAlchemy database models
+�
++-- dashboard/
+    +-- app.py          # Streamlit dashboard
 ```
 
 ## API Endpoints
