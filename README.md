@@ -77,6 +77,14 @@ Example call:
 curl -H "X-API-Key: dev-secret" http://127.0.0.1:8000/metrics
 ```
 
+### Carrier Verification (FMCSA)
+
+The challenge expects carrier verification against the official FMCSA database. In this proof of concept, the `/verify-carrier` endpoint is currently **stubbed** to return deterministic demo responses while the FMCSA API key is pending. The endpoint is wired to accept the MC number and can be upgraded to a live FMCSA lookup once the key is available.
+
+If you are reviewing the demo without the FMCSA key:
+- The end-to-end workflow still runs.
+- Carrier verification should be considered a mocked step.
+
 ### HTTPS
 
 Local HTTPS (self-signed):
