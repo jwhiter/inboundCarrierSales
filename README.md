@@ -2,6 +2,14 @@
 
 This project is a proof of concept for automating inbound carrier load sales using FastAPI. It simulates a backend system that can verify carriers, search for loads, evaluate offers, and record call outcomes.
 
+## Links
+
+- Repo: `https://github.com/jwhiter/inboundCarrierSales.git`
+
+## Architecture
+
+![Architecture Flow](docs/architectureFlow.png)
+
 ## Features
 
 - **Carrier Verification**: Check if a carrier is eligible to haul loads.
@@ -70,18 +78,20 @@ This API requires an API key for all endpoints.
 Set an API key in `.env` (the app loads it automatically):
 
 ```env
-API_KEY=dev-secret
+API_KEY=<your-strong-key>
 ```
 
 Example call:
 
 ```bash
-curl -H "X-API-Key: dev-secret" http://127.0.0.1:8000/metrics
+curl -H "X-API-Key: <your-strong-key>" http://127.0.0.1:8000/metrics
 ```
 
 ### Carrier Verification (FMCSA)
 
-The challenge expects carrier verification against the official FMCSA database. In this proof of concept, the `/verify-carrier` endpoint is currently **stubbed** to return deterministic demo responses while the FMCSA API key is pending. The endpoint is wired to accept the MC number and can be upgraded to a live FMCSA lookup once the key is available.
+The challenge expects carrier verification against the official FMCSA database. In this proof of concept, the `/verify-carrier` endpoint is currently **mocked** because I could not retrieve the FMCSA API key from the provided link (it expired). The endpoint is wired to accept the MC number and can be upgraded to a live FMCSA lookup once the key is available.
+
+**Planned update:** replace the stubbed logic in `app/main.py` with a real FMCSA lookup using a `FMCSA_WEBKEY` environment variable. The flow stays the same: send MC number to FMCSA, parse status/eligibility, and return `eligible`, `carrier_name`, and `status`.
 
 If you are reviewing the demo without the FMCSA key:
 - The end-to-end workflow still runs.
