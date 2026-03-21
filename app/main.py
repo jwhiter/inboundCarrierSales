@@ -38,6 +38,68 @@ app = FastAPI(
     dependencies=[Depends(require_api_key)]
 )
 
+def seed_db():
+    db = SessionLocal()
+    try:
+        existing = db.query(CallRecord).count()
+        if existing > 0:
+            return
+
+        seed_calls = [
+            CallRecord(
+                mc_number="123456",
+                carrier_name="Demo Carrier LLC",
+                carrier_eligible=True,
+                load_id="LD-001",
+                origin="Chicago, IL",
+                destination="Atlanta, GA",
+                pickup_datetime="2026-03-16T09:00:00",
+                delivery_datetime="2026-03-17T15:00:00",
+                equipment_type="Dry Van",
+                loadboard_rate=2200,
+                counteroffer=2300,
+                final_rate=2250,
+                notes="POC seed record",
+                weight=32000,
+                commodity_type="Retail Goods",
+                num_of_pieces=24,
+                miles=715,
+                dimensions="24 pallets",
+                negotiation_rounds=2,
+                outcome="booked",
+                sentiment="positive",
+            ),
+            CallRecord(
+                mc_number="654321",
+                carrier_name="Sample Carrier Inc",
+                carrier_eligible=True,
+                load_id="LD-003",
+                origin="Dallas, TX",
+                destination="Phoenix, AZ",
+                pickup_datetime="2026-03-18T08:00:00",
+                delivery_datetime="2026-03-19T16:00:00",
+                equipment_type="Flatbed",
+                loadboard_rate=1850,
+                counteroffer=2100,
+                final_rate=0,
+                notes="POC seed record",
+                weight=36000,
+                commodity_type="Construction Materials",
+                num_of_pieces=18,
+                miles=1065,
+                dimensions="18 pallets",
+                negotiation_rounds=3,
+                outcome="negotiation_failed",
+                sentiment="neutral",
+            ),
+        ]
+        db.add_all(seed_calls)
+        db.commit()
+    finally:
+        db.close()
+
+seed_db()
+
 class CarrierRequest(BaseModel):
     mc_number: str = Field(example="123456")
 
