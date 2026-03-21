@@ -32,7 +32,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 1.  **Clone the repository:**
     ```bash
-    git clone ttps://github.com/jwhiter/inboundCarrierSales.git
+    git clone https://github.com/jwhiter/inboundCarrierSales.git
     cd inboundCarrierSales
     ```
 
