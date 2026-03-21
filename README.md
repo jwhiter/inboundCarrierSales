@@ -152,6 +152,17 @@ Use the same steps above in the Render dashboard, or automate it with Terraform 
 - An env var `API_KEY`
 - A start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
+## Data persistence (SQLite)
+
+For cloud deployments, local container storage is ephemeral. This project defaults to:
+- `/home/calls.db` on Linux hosts that expose a persistent `/home` (e.g., Azure App Service)
+- `./calls.db` everywhere else
+
+You can override the SQLite path by setting:
+```text
+CALLS_DB_PATH=/path/to/calls.db
+```
+
 ## Dashboard deployment (optional)
 
 If you deploy the Streamlit dashboard, set:
