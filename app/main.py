@@ -209,7 +209,7 @@ def verify_carrier(request: CarrierRequest):
             "reason": "Carrier not found; requires manual review"
         }
 
-    allow_to_operate = carrier.get("allowToOperate")
+    allow_to_operate = carrier.get("allowToOperate") or carrier.get("allowedToOperate")
     out_of_service = carrier.get("outOfService")
     carrier_name = carrier.get("legalName") or carrier.get("dbaName")
 
