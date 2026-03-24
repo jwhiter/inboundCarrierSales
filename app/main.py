@@ -161,7 +161,6 @@ def root():
 # ----- verify carrier eligibility -------
 @app.post("/verify-carrier")
 def verify_carrier(request: CarrierRequest):
-    fmcsa_key_present = bool(FMCSA_WEBKEY)
     if not FMCSA_WEBKEY:
         raise HTTPException(status_code=500, detail="FMCSA_WEBKEY is not configured")
 
@@ -185,8 +184,7 @@ def verify_carrier(request: CarrierRequest):
                 "eligible": False,
                 "carrier_name": None,
                 "status": "unknown",
-                "reason": "Carrier not found; requires manual review",
-                "fmcsa_key_present": fmcsa_key_present,
+                "reason": "Carrier not found; requires manual review"
             }
         raise HTTPException(status_code=502, detail="FMCSA API error") from exc
     except Exception as exc:  # pragma: no cover - defensive
@@ -208,8 +206,7 @@ def verify_carrier(request: CarrierRequest):
             "eligible": False,
             "carrier_name": None,
             "status": "unknown",
-            "reason": "Carrier not found; requires manual review",
-            "fmcsa_key_present": fmcsa_key_present,
+            "reason": "Carrier not found; requires manual review"
         }
 
     allow_to_operate = carrier.get("allowToOperate")
@@ -221,24 +218,21 @@ def verify_carrier(request: CarrierRequest):
             "eligible": True,
             "carrier_name": carrier_name,
             "status": "active",
-            "reason": "Carrier verified",
-            "fmcsa_key_present": fmcsa_key_present,
+            "reason": "Carrier verified"
         }
     if allow_to_operate == "N" or out_of_service == "Y":
         return {
             "eligible": False,
             "carrier_name": carrier_name,
             "status": "inactive",
-            "reason": "Carrier is not eligible to haul",
-            "fmcsa_key_present": fmcsa_key_present,
+            "reason": "Carrier is not eligible to haul"
         }
 
     return {
         "eligible": False,
         "carrier_name": carrier_name,
         "status": "unknown",
-        "reason": "Carrier not found; requires manual review",
-        "fmcsa_key_present": fmcsa_key_present,
+        "reason": "Carrier not found; requires manual review"
     }
 
 # ----- search loads in loads.json -------
