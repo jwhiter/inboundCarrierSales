@@ -89,13 +89,17 @@ curl -H "X-API-Key: <your-strong-key>" http://127.0.0.1:8000/metrics
 
 ### Carrier Verification (FMCSA)
 
-The challenge expects carrier verification against the official FMCSA database. In this proof of concept, the `/verify-carrier` endpoint is currently **mocked** because I could not retrieve the FMCSA API key from the provided link (it expired). The endpoint is wired to accept the MC number and can be upgraded to a live FMCSA lookup once the key is available.
+The `/verify-carrier` endpoint performs a live lookup against the official FMCSA QCMobile API using an MC number.
 
-**Planned update:** replace the stubbed logic in `app/main.py` with a real FMCSA lookup using a `FMCSA_WEBKEY` environment variable. The flow stays the same: send MC number to FMCSA, parse status/eligibility, and return `eligible`, `carrier_name`, and `status`.
+Set the FMCSA web key in `.env`:
+
+```env
+FMCSA_WEBKEY=<your-fmcsa-key>
+```
 
 If you are reviewing the demo without the FMCSA key:
 - The end-to-end workflow still runs.
-- Carrier verification should be considered a mocked step.
+- `/verify-carrier` will return a 500 error indicating the key is missing.
 
 ### HTTPS
 

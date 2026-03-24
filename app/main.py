@@ -1,4 +1,7 @@
 import os
+import re
+import urllib.parse
+import urllib.request
 from fastapi import FastAPI, Header, HTTPException, Depends
 from pydantic import BaseModel, Field
 import json
@@ -26,6 +29,10 @@ load_env()
 Base.metadata.create_all(bind=engine)
 
 API_KEY = os.getenv("API_KEY")
+FMCSA_WEBKEY = os.getenv("FMCSA_WEBKEY")
+
+FMCSA_BASE_URL = "https://mobile.fmcsa.dot.gov/qc/services"
+FMCSA_TIMEOUT_SECONDS = 8
 
 def require_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")):
     if not API_KEY:
@@ -154,27 +161,85 @@ def root():
 # ----- verify carrier eligibility -------
 @app.post("/verify-carrier")
 def verify_carrier(request: CarrierRequest):
-    if request.mc_number == "123456":
-        return {
-            "eligible": True,
-            "carrier_name": "Demo Carrier LLC",
-            "status": "active",
-            "reason": "Carrier verified"
-        }
-    elif request.mc_number =="999999":
-        return {
-            "eligible": False,
-            "carrier_name": "Blocked Carrier Inc",
-            "status": "inactive",
-            "reason": "Carrier is not eligible to haul"
-        }
-    else:
+    fmcsa_key_present = bool(FMCSA_WEBKEY)
+    if not FMCSA_WEBKEY:
+        raise HTTPException(status_code=500, detail="FMCSA_WEBKEY is not configured")
+
+    mc_number = re.sub(r"\D", "", request.mc_number or "")
+    if not mc_number:
+        raise HTTPException(status_code=400, detail="MC number is required")
+
+    url = (
+        f"{FMCSA_BASE_URL}/carriers/docket-number/"
+        f"{urllib.parse.quote(mc_number)}?webKey={urllib.parse.quote(FMCSA_WEBKEY)}"
+    )
+
+    try:
+        with urllib.request.urlopen(url, timeout=FMCSA_TIMEOUT_SECONDS) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            raise HTTPException(status_code=502, detail="FMCSA API key rejected") from exc
+        if exc.code == 404:
+            return {
+                "eligible": False,
+                "carrier_name": None,
+                "status": "unknown",
+                "reason": "Carrier not found; requires manual review",
+                "fmcsa_key_present": fmcsa_key_present,
+            }
+        raise HTTPException(status_code=502, detail="FMCSA API error") from exc
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(status_code=502, detail="FMCSA API request failed") from exc
+
+    carrier = payload
+    if isinstance(payload, dict) and "content" in payload:
+        content = payload.get("content")
+        if isinstance(content, list) and content:
+            carrier = content[0]
+        elif isinstance(content, dict):
+            carrier = content
+
+    if isinstance(carrier, dict) and "carrier" in carrier and isinstance(carrier["carrier"], dict):
+        carrier = carrier["carrier"]
+
+    if not isinstance(carrier, dict):
         return {
             "eligible": False,
             "carrier_name": None,
             "status": "unknown",
-            "reason": "Carrier not found; requires manual review"
+            "reason": "Carrier not found; requires manual review",
+            "fmcsa_key_present": fmcsa_key_present,
         }
+
+    allow_to_operate = carrier.get("allowToOperate")
+    out_of_service = carrier.get("outOfService")
+    carrier_name = carrier.get("legalName") or carrier.get("dbaName")
+
+    if allow_to_operate == "Y" and out_of_service != "Y":
+        return {
+            "eligible": True,
+            "carrier_name": carrier_name,
+            "status": "active",
+            "reason": "Carrier verified",
+            "fmcsa_key_present": fmcsa_key_present,
+        }
+    if allow_to_operate == "N" or out_of_service == "Y":
+        return {
+            "eligible": False,
+            "carrier_name": carrier_name,
+            "status": "inactive",
+            "reason": "Carrier is not eligible to haul",
+            "fmcsa_key_present": fmcsa_key_present,
+        }
+
+    return {
+        "eligible": False,
+        "carrier_name": carrier_name,
+        "status": "unknown",
+        "reason": "Carrier not found; requires manual review",
+        "fmcsa_key_present": fmcsa_key_present,
+    }
 
 # ----- search loads in loads.json -------
 @app.post("/search-loads")
